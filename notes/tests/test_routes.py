@@ -44,7 +44,7 @@ class TestRoutes(TestCase):
                 url = reverse(name)
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-    
+
     def test_pages_availability_for_auth_user(self):
         """Тест доступности страниц для авторизованного пользователя."""
         urls = ('notes:list', 'notes:add', 'notes:success')
@@ -55,7 +55,7 @@ class TestRoutes(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_pages_availability_for_different_users(self):
-        """Тест доступа к странице заметки для автора и других пользователей."""
+        """Тест доступа страницы заметки для автора и других пользователей."""
         users_statuses = (
             (self.author, HTTPStatus.OK),
             (self.admin, HTTPStatus.NOT_FOUND),
@@ -68,7 +68,7 @@ class TestRoutes(TestCase):
                     url = reverse(name, args=(self.note.slug,))
                     response = self.client.get(url)
                     self.assertEqual(response.status_code, status)
-    
+
     def test_redirects(self):
         """Тест редиректов для анонимного пользователя."""
         urls_args = (
