@@ -11,6 +11,11 @@ from notes.models import Note
 
 User = get_user_model()
 
+def get_response_object(client_type, url_namespace, args=None):
+    """Универсальная функция получения объекта response."""
+    url = reverse(url_namespace, args=args)
+    response = client_type.get(url)
+    return response
 
 class TestRoutes(TestCase):
     """Класс для тестирования маршрутов."""
@@ -41,18 +46,24 @@ class TestRoutes(TestCase):
         )
         for name in urls:
             with self.subTest(name=name):
-                url = reverse(name)
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
+                self.assertEqual(
+                    get_response_object(
+                        client_type=self.client,
+                        url_namespace=name
+                    ).status_code, HTTPStatus.OK
+                )
 
     def test_pages_availability_for_auth_user(self):
         """Тест доступности страниц для авторизованного пользователя."""
         urls = ('notes:list', 'notes:add', 'notes:success')
         for name in urls:
             with self.subTest(name=name):
-                url = reverse(name)
-                response = self.admin_client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
+                self.assertEqual(
+                    get_response_object(
+                        client_type=self.admin_client,
+                        url_namespace=name
+                    ).status_code, HTTPStatus.OK
+                )
 
     def test_pages_availability_for_different_users(self):
         """Тест доступа страницы заметки для автора и других пользователей."""
@@ -65,9 +76,13 @@ class TestRoutes(TestCase):
             self.client.force_login(user)
             for name in urls:
                 with self.subTest(user=user, name=name):
-                    url = reverse(name, args=(self.note.slug,))
-                    response = self.client.get(url)
-                    self.assertEqual(response.status_code, status)
+                    self.assertEqual(
+                        get_response_object(
+                            client_type=self.client,
+                            url_namespace=name,
+                            args=(self.note.slug,)
+                        ).status_code, status
+                    )
 
     def test_redirects(self):
         """Тест редиректов для анонимного пользователя."""

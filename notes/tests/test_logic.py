@@ -14,6 +14,7 @@ User = get_user_model()
 
 
 class TestNotes(TestCase):
+    """Класс тестов логики работы с заметками."""
 
     @classmethod
     def setUpTestData(cls):
