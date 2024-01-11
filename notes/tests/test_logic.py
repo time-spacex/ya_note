@@ -25,7 +25,7 @@ class TestNotes(TestCase):
         cls.author = User.objects.create(username='Author')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
-    
+
     def setUp(self):
         """Подготовка данных перед каждым тестом."""
         self.FORM_DATA = {
@@ -111,7 +111,7 @@ class TestNotes(TestCase):
         response = self.author_client.post(url)
         self.assertRedirects(response, reverse('notes:success'))
         self.assertEqual(Note.objects.count(), 0)
-    
+
     def test_other_user_cant_delete_note(self):
         """Тест невозможности удаления несовей заметки."""
         url = reverse('notes:delete', args=(self.note.slug,))

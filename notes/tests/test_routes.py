@@ -11,11 +11,13 @@ from notes.models import Note
 
 User = get_user_model()
 
+
 def get_response_object(client_type, url_namespace, args=None):
     """Универсальная функция получения объекта response."""
     url = reverse(url_namespace, args=args)
     response = client_type.get(url)
     return response
+
 
 class TestRoutes(TestCase):
     """Класс для тестирования маршрутов."""
