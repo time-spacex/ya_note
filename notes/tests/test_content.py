@@ -3,6 +3,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from notes.models import Note
+from notes.forms import NoteForm
 
 
 User = get_user_model()
@@ -14,9 +15,9 @@ class TestContent(TestCase):
     @classmethod
     def setUpTestData(cls):
         """Подготовка данных перед тестами."""
-        cls.admin = User.objects.create(username='Admin', is_staff=True)
-        cls.admin_client = Client()
-        cls.admin_client.force_login(cls.admin)
+        cls.reader = User.objects.create(username='Reader')
+        cls.reader_client = Client()
+        cls.reader_client.force_login(cls.reader)
         cls.author = User.objects.create(username='Author')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
@@ -31,14 +32,14 @@ class TestContent(TestCase):
         """Тест отображения списка заметок для разных пользователей."""
         user_note_in_list = (
             (self.author_client, True),
-            (self.admin_client, False),
+            (self.reader_client, False),
         )
         for user, note_in_list in user_note_in_list:
             with self.subTest(user=user):
                 url = reverse('notes:list')
                 response = user.get(url)
                 object_list = response.context['object_list']
-                self.assertEqual((self.note in object_list), note_in_list)
+                self.assertIs((self.note in object_list), note_in_list)
 
     def test_pages_contains_form(self):
         """Тест формы на страницах создания и редактирования заметки."""
@@ -50,4 +51,5 @@ class TestContent(TestCase):
             with self.subTest(name=name, args=args):
                 url = reverse(name, args=args)
                 response = self.author_client.get(url)
-                self.assertTrue('form' in response.context)
+                self.assertIn('form', response.context)
+                self.assertIsInstance(response.context['form'], NoteForm)

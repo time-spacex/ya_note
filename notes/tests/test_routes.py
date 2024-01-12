@@ -12,22 +12,21 @@ from notes.models import Note
 User = get_user_model()
 
 
-def get_response_object(client_type, url_namespace, args=None):
-    """Универсальная функция получения объекта response."""
-    url = reverse(url_namespace, args=args)
-    response = client_type.get(url)
-    return response
-
-
 class TestRoutes(TestCase):
     """Класс для тестирования маршрутов."""
+
+    def get_response_object(self, client_type, url_namespace, args=None):
+        """Универсальный метод получения объекта response."""
+        url = reverse(url_namespace, args=args)
+        response = client_type.get(url)
+        return response
 
     @classmethod
     def setUpTestData(cls):
         """Подготовка данных перед тестами."""
-        cls.admin = User.objects.create(username='Admin', is_staff=True)
-        cls.admin_client = Client()
-        cls.admin_client.force_login(cls.admin)
+        cls.reader = User.objects.create(username='Reader')
+        cls.reader_client = Client()
+        cls.reader_client.force_login(cls.reader)
         cls.author = User.objects.create(username='Author')
         cls.author_client = Client()
         cls.author_client.force_login(cls.author)
@@ -37,6 +36,13 @@ class TestRoutes(TestCase):
             slug='note-slug',
             author=cls.author,
         )
+        cls.note_slug = (cls.note.slug,)
+
+    def get_response_object(self, client_type, url_namespace, args=None):
+        """Универсальный метод получения объекта response."""
+        url = reverse(url_namespace, args=args)
+        response = client_type.get(url)
+        return response
 
     def test_pages_availability(self):
         """Тест доступности страниц для всех пользователей."""
@@ -49,7 +55,7 @@ class TestRoutes(TestCase):
         for name in urls:
             with self.subTest(name=name):
                 self.assertEqual(
-                    get_response_object(
+                    self.get_response_object(
                         client_type=self.client,
                         url_namespace=name
                     ).status_code, HTTPStatus.OK
@@ -61,8 +67,8 @@ class TestRoutes(TestCase):
         for name in urls:
             with self.subTest(name=name):
                 self.assertEqual(
-                    get_response_object(
-                        client_type=self.admin_client,
+                    self.get_response_object(
+                        client_type=self.reader_client,
                         url_namespace=name
                     ).status_code, HTTPStatus.OK
                 )
@@ -70,28 +76,27 @@ class TestRoutes(TestCase):
     def test_pages_availability_for_different_users(self):
         """Тест доступа страницы заметки для автора и других пользователей."""
         users_statuses = (
-            (self.author, HTTPStatus.OK),
-            (self.admin, HTTPStatus.NOT_FOUND),
+            (self.author_client, HTTPStatus.OK),
+            (self.reader_client, HTTPStatus.NOT_FOUND),
         )
         urls = ('notes:detail', 'notes:edit', 'notes:delete')
         for user, status in users_statuses:
-            self.client.force_login(user)
             for name in urls:
                 with self.subTest(user=user, name=name):
                     self.assertEqual(
-                        get_response_object(
-                            client_type=self.client,
+                        self.get_response_object(
+                            client_type=user,
                             url_namespace=name,
-                            args=(self.note.slug,)
+                            args=self.note_slug
                         ).status_code, status
                     )
 
     def test_redirects(self):
         """Тест редиректов для анонимного пользователя."""
         urls_args = (
-            ('notes:detail', (self.note.slug,)),
-            ('notes:edit', (self.note.slug,)),
-            ('notes:delete', (self.note.slug,)),
+            ('notes:detail', self.note_slug),
+            ('notes:edit', self.note_slug),
+            ('notes:delete', self.note_slug),
             ('notes:add', None),
             ('notes:success', None),
             ('notes:list', None),
